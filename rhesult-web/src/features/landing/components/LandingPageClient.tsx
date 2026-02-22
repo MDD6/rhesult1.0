@@ -1,0 +1,1 @@
+export { LandingPageClient } from "./LandingPageClientFull";

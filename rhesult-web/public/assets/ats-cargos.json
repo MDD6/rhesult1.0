@@ -1,0 +1,143 @@
+{
+  "_synonyms": {
+    "dev": ["desenvolvedor", "programador"],
+    "javascript": ["js"],
+    "typescript": ["ts"],
+    "dotnet": [".net"],
+    "csharp": ["c#"],
+    "postgres": ["postgresql"],
+    "kubernetes": ["k8s"],
+    "producao": ["producao"],
+    "manutencao": ["manutencao preventiva", "manutencao corretiva"]
+  },
+  "cargos": {
+    "Auxiliar de Producao": {
+      "keywords": [
+        "producao",
+        "linha",
+        "montagem",
+        "embalagem",
+        "estoque",
+        "separacao",
+        "conferencia",
+        "qualidade",
+        "5s",
+        "manutencao",
+        "operacao",
+        "maquina"
+      ],
+      "core": ["producao", "linha", "montagem"],
+      "aliases": ["auxiliar", "operador", "chao de fabrica"],
+      "min_years": 1
+    },
+    "Desenvolvedor": {
+      "keywords": [
+        "javascript",
+        "typescript",
+        "node",
+        "react",
+        "vue",
+        "angular",
+        "java",
+        "spring",
+        "python",
+        "django",
+        "flask",
+        "dotnet",
+        "csharp",
+        "sql",
+        "mysql",
+        "postgres",
+        "mongodb",
+        "api",
+        "rest",
+        "graphql",
+        "git",
+        "docker",
+        "aws",
+        "azure",
+        "kubernetes"
+      ],
+      "core": ["javascript", "sql", "api"],
+      "aliases": ["dev", "programador", "software"],
+      "min_years": 2
+    },
+    "Consultor de RH": {
+      "keywords": [
+        "recrutamento",
+        "seleção",
+        "triagem",
+        "sourcing",
+        "entrevistas",
+        "scorecards",
+        "onboarding",
+        "people ops",
+        "sla",
+        "time-to-fill",
+        "kpi",
+        "talent acquisition",
+        "ats",
+        "stakeholders"
+      ],
+      "core": ["recrutamento", "entrevistas", "scorecards"],
+      "aliases": ["rh", "people ops", "talent acquisition"],
+      "min_years": 1
+    },
+    "Analista de Dados": {
+      "keywords": [
+        "analise de dados",
+        "dashboard",
+        "kpi",
+        "power bi",
+        "excel",
+        "sql",
+        "relatorios",
+        "modelagem",
+        "etl",
+        "indicadores",
+        "visualizacao",
+        "power query"
+      ],
+      "core": ["sql", "power bi", "kpi"],
+      "aliases": ["bi", "business intelligence", "data analyst"],
+      "min_years": 1
+    },
+    "Analista de Processos": {
+      "keywords": [
+        "processos",
+        "mapeamento",
+        "melhoria continua",
+        "sla",
+        "kpi",
+        "fluxo",
+        "padronizacao",
+        "sprints",
+        "operacoes",
+        "automatizacao",
+        "lean",
+        "bpmn"
+      ],
+      "core": ["processos", "kpi", "melhoria continua"],
+      "aliases": ["operacoes", "process analyst"],
+      "min_years": 1
+    },
+    "UX/UI Designer": {
+      "keywords": [
+        "ux",
+        "ui",
+        "figma",
+        "prototipacao",
+        "wireframe",
+        "usabilidade",
+        "design system",
+        "pesquisa",
+        "journey",
+        "personas",
+        "interface"
+      ],
+      "core": ["figma", "ux", "ui"],
+      "aliases": ["product designer", "ux designer", "ui designer"],
+      "min_years": 1
+    }
+  }
+}

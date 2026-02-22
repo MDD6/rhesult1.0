@@ -1,0 +1,210 @@
+/* Utilities */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: rgb(241, 245, 249);
+  color: rgb(71, 85, 105);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgb(226, 232, 240);
+}
+
+.pill-accent {
+  background-color: rgba(245, 134, 52, 0.1);
+  border-color: rgba(245, 134, 52, 0.3);
+  color: #f58634;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition-property: all;
+  transition-duration: 200ms;
+  outline: none;
+}
+
+.btn:focus {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: linear-gradient(to right, #f58634, #f97316);
+  color: white;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(2px);
+}
+
+.btn-primary:focus {
+  outline-color: rgba(245, 134, 52, 0.3);
+}
+
+.btn-ghost {
+  color: rgb(71, 85, 105);
+  border: 1px solid transparent;
+}
+
+.btn-ghost:hover {
+  background-color: rgb(241, 245, 249);
+}
+
+.btn-ghost:focus {
+  outline-color: rgb(203, 213, 225);
+}
+
+.btn-compact {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* Cards */
+.card {
+  border-radius: 1rem;
+  border: 1px solid rgb(226, 232, 240);
+  background-color: white;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.img-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  background-color: rgb(241, 245, 249);
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: rgb(203, 213, 225);
+  transition: all 200ms;
+}
+
+/* Text Styles */
+.muted {
+  color: rgb(100, 116, 139);
+}
+
+/* Glass effect */
+.glass-ribbon {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+}
+
+/* Mini icons */
+.mini-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-ico-accent {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 9999px;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.mini-ico-lg {
+  width: 2rem;
+  height: 2rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+/* Bar brand */
+.bar-brand {
+  background: linear-gradient(to right, #f58634, #f97316);
+}
+
+/* Tag */
+.tag {
+  position: absolute;
+  top: 0.75rem;
+  left: 1rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: rgb(15, 23, 42);
+  z-index: 10;
+}
+
+/* Overlay */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent, transparent);
+}
+
+/* Soft card */
+.soft-card {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226, 232, 240);
+  background: linear-gradient(to bottom right, rgb(248, 250, 252), white);
+  transition: all 200ms;
+}
+
+.soft-card:hover {
+  border-color: rgb(203, 213, 225);
+}
+
+/* Nav link */
+.nav-link {
+  color: rgb(71, 85, 105);
+  transition: color 200ms;
+}
+
+.nav-link:hover {
+  color: rgb(15, 23, 42);
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Focus visible */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid #f58634;
+  outline-offset: 2px;
+}
