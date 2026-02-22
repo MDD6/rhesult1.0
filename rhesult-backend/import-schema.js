@@ -12,10 +12,7 @@ async function importSchema() {
 
     if (process.env.DATABASE_URL || process.env.MYSQL_URL) {
       const url = process.env.DATABASE_URL || process.env.MYSQL_URL;
-      // mysql2 expects the connection string as the first argument if provided, or we can parse it.
-      // But let's use the object form with the dedicated 'uri' property if supported, or just pass the string.
-      // createConnection(string) is supported.
-      connection = await mysql.createConnection(url);
+      connection = await mysql.createConnection({ uri: url, multipleStatements: true });
     } else {
       const dbConfig = {
         host: process.env.DB_HOST,
@@ -30,6 +27,9 @@ async function importSchema() {
     
     console.log(`✅ Conectado ao MySQL`);
 
+    // Desabilitar checagem de foreign keys para evitar erros de ordem
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+
     // Ler arquivo SQL
     const schemaPath = path.join(__dirname, '../rhesult-web/database/rhesult_schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf-8');
@@ -38,11 +38,18 @@ async function importSchema() {
     // Conectar ao DB especifico (não mais necessario se passamos database no config)
     // await connection.query(`USE ${process.env.DB_NAME}`);
     
-    // Dividir comandos (simplificado - não lida com strings complexas)
+    // Dividir comandos e remover comentários de cada bloco
     const commands = schema
       .split(';')
-      .map(cmd => cmd.trim())
-      .filter(cmd => cmd.length > 0 && !cmd.startsWith('--'));
+      .map(cmd => {
+        // Remove linhas de comentário (-- ...) de cada bloco antes de avaliar
+        return cmd
+          .split('\n')
+          .filter(line => !line.trim().startsWith('--'))
+          .join('\n')
+          .trim();
+      })
+      .filter(cmd => cmd.length > 0);
 
     console.log(`📋 ${commands.length} comandos encontrados\n`);
 
@@ -63,6 +70,10 @@ async function importSchema() {
     }
 
     console.log('\n✅ Schema importado com sucesso!');
+    
+    // Reabilitar checagem de foreign keys
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+    
     process.exit(0);
   } catch (error) {
     console.error('❌ Erro:', error.message);
