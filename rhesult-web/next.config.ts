@@ -40,6 +40,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               // Allow backend-hosted avatars and static assets
               `img-src 'self' data: blob: https://images.unsplash.com ${BACKEND_URL}`,
+              "media-src 'self' https://github.com https://objects.githubusercontent.com",
               `connect-src ${connectSrc}`,
             ].join("; "),
           },

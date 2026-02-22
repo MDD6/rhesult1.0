@@ -529,7 +529,7 @@ export function LandingPageClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-16">
             <div className="relative w-full h-75 md:h-105 rounded-[20px] overflow-hidden shadow-2xl border border-white/60 group">
               <video className="w-full h-full object-cover" autoPlay loop muted playsInline controls preload="none" poster="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80">
-                <source src="/assets/images/RHESULT I AFAGO.mp4" type="video/mp4" />
+                <source src="https://github.com/MDD6/rhesult1.0/releases/download/v1.0/RHESULT%20I%20AFAGO.mp4" type="video/mp4" />
                 Seu navegador não suporta vídeo.
               </video>
               <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
