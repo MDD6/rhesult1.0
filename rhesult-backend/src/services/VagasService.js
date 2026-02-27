@@ -17,15 +17,16 @@ class VagasService {
 
     try {
       const [rows] = await connection.execute(
-        `SELECT id, titulo, tipo_contrato, modelo_trabalho, senioridade,
-                cidade, descricao, descricao_curta, area, responsavel,
-                salario_min, salario_max,
-                status,
-                status AS status_processo,
-                created_at,
-                created_at AS data_abertura,
-                0 AS total_candidatos
-         FROM vagas ORDER BY created_at DESC`
+        `SELECT v.id, v.titulo, v.tipo_contrato, v.modelo_trabalho, v.senioridade,
+                v.cidade, v.descricao, v.descricao_curta, v.area, v.responsavel,
+                v.salario_min, v.salario_max,
+                v.status,
+                v.status AS status_processo,
+                v.created_at,
+                v.created_at AS data_abertura,
+                (SELECT COUNT(*) FROM candidatos c WHERE c.vaga_id = v.id) AS total_candidatos,
+                (SELECT COUNT(*) FROM entrevistas e WHERE e.vaga_id = v.id) AS total_entrevistas
+         FROM vagas v ORDER BY v.created_at DESC`
       );
 
       return rows;
@@ -207,27 +208,27 @@ class VagasService {
     const values = [];
 
     if (filters?.q) {
-      conditions.push('(titulo LIKE ? OR descricao LIKE ?)');
+      conditions.push('(v.titulo LIKE ? OR v.descricao LIKE ?)');
       values.push(`%${filters.q}%`, `%${filters.q}%`);
     }
 
     if (filters?.cidade) {
-      conditions.push('cidade = ?');
+      conditions.push('v.cidade = ?');
       values.push(filters.cidade);
     }
 
     if (filters?.modelo_trabalho) {
-      conditions.push('modelo_trabalho = ?');
+      conditions.push('v.modelo_trabalho = ?');
       values.push(filters.modelo_trabalho);
     }
 
     if (filters?.senioridade) {
-      conditions.push('senioridade = ?');
+      conditions.push('v.senioridade = ?');
       values.push(filters.senioridade);
     }
 
     if (filters?.status_processo) {
-      conditions.push('status = ?');
+      conditions.push('v.status = ?');
       values.push(this.normalizeStatus(filters.status_processo));
     }
 
@@ -237,17 +238,18 @@ class VagasService {
 
     try {
       const [rows] = await connection.execute(
-        `SELECT id, titulo, tipo_contrato, modelo_trabalho, senioridade,
-                cidade, descricao, descricao_curta, area, responsavel,
-                salario_min, salario_max,
-                status,
-                status AS status_processo,
-                created_at,
-                created_at AS data_abertura,
-                0 AS total_candidatos
-         FROM vagas
+        `SELECT v.id, v.titulo, v.tipo_contrato, v.modelo_trabalho, v.senioridade,
+                v.cidade, v.descricao, v.descricao_curta, v.area, v.responsavel,
+                v.salario_min, v.salario_max,
+                v.status,
+                v.status AS status_processo,
+                v.created_at,
+                v.created_at AS data_abertura,
+                (SELECT COUNT(*) FROM candidatos c WHERE c.vaga_id = v.id) AS total_candidatos,
+                (SELECT COUNT(*) FROM entrevistas e WHERE e.vaga_id = v.id) AS total_entrevistas
+         FROM vagas v
          ${whereClause}
-         ORDER BY created_at DESC`,
+         ORDER BY v.created_at DESC`,
         values
       );
 
