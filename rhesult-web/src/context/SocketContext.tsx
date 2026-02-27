@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { AUTH_CONFIG } from '@/shared/constants/app';
 
 interface SocketContextType {
   socket: Socket | null;
@@ -25,13 +24,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Only connect when authenticated (token exists)
-    const token = localStorage.getItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
-    if (!token) return;
-
     const socketInstance = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
-      auth: { token },
+      withCredentials: true,
     });
 
     socketInstance.on('connect', () => {

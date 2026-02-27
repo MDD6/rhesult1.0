@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import DOMPurify from "dompurify";
 import { AppHeader } from "@/shared/components/AppHeader";
 import { useAuth } from "@/shared/context/AppContext";
 import { fetchCandidatos, fetchVagas, type Candidato, type Vaga } from "@/features/talent-bank/services/talentBankApi";
@@ -305,6 +306,10 @@ function VersionList({ versoes, onLoadVersion }: { versoes: ParecerVersao[]; onL
 
 function PreviewModal({ content, candidatoNome, vagaTitulo, status, onClose, onPrint, onDownload }: { content: string; candidatoNome: string; vagaTitulo: string; status: ParecerStatus; onClose: () => void; onPrint?: () => void; onDownload?: () => void }) {
   const cfg = STATUS_CONFIG[status];
+  const safeHtml = useMemo(
+    () => DOMPurify.sanitize(content || "<p>Sem conteúdo.</p>"),
+    [content],
+  );
   useEffect(() => {
     const handleKey = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handleKey);
@@ -336,7 +341,7 @@ function PreviewModal({ content, candidatoNome, vagaTitulo, status, onClose, onP
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-[72px] py-10">
-          <div className="prose prose-slate max-w-none rhesult-editor" dangerouslySetInnerHTML={{ __html: content || "<p>Sem conte\u00fado.</p>" }} />
+          <div className="prose prose-slate max-w-none rhesult-editor" dangerouslySetInnerHTML={{ __html: safeHtml }} />
         </div>
         <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
           <p className="text-[11px] text-slate-400 font-medium">{wordCount(content)} palavras · {content.length} caracteres · {readingTime(content)}</p>

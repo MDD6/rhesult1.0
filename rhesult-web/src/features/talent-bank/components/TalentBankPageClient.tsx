@@ -121,14 +121,16 @@ function resolveCurriculumLink(url?: string) {
   const value = String(url || "").trim();
   if (!value) return "";
 
-  // /uploads/* is proxied to backend by next.config rewrites
-  // No need to route through /api/public
   if (value.startsWith("http://") || value.startsWith("https://")) {
     return value;
   }
 
-  // Ensure leading slash for relative paths
-  return value.startsWith("/") ? value : `/${value}`;
+  const normalized = value.startsWith("/") ? value : `/${value}`;
+  if (normalized.startsWith("/uploads/")) {
+    return `/api/public${normalized}`;
+  }
+
+  return normalized;
 }
 
 function badgeClass(etapa?: string) {
@@ -214,7 +216,7 @@ export function TalentBankPageClient() {
 
   const [detalhe, setDetalhe] = useState<Candidato | null>(null);
   const [modalEtapa, setModalEtapa] = useState("");
-  const [showQuickActions, setShowQuickActions] = useState(false);
+  // const [showQuickActions, setShowQuickActions] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [exportScope, setExportScope] = useState<ExportScope>("filtered");
@@ -272,7 +274,12 @@ export function TalentBankPageClient() {
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
-      if (errorMsg.includes("vagas")) {
+      if (errorMsg.includes("status:401") || errorMsg.toLowerCase().includes("sessão expirada")) {
+        setError("Sua sessão expirou. Redirecionando para o login...");
+        window.setTimeout(() => {
+          window.location.href = "/login";
+        }, 1200);
+      } else if (errorMsg.includes("vagas")) {
         setVagasError("⚠️ Sistema de vagas indisponível no momento. Você ainda pode cadastrar candidatos no banco de talentos.");
       } else {
         setError("Erro ao conectar com o servidor. Verifique sua conexão.");

@@ -44,41 +44,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (typeof window === "undefined") return;
 
       try {
-        const storedToken = localStorage.getItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
         const storedUser = localStorage.getItem(AUTH_CONFIG.USER_STORAGE_KEY);
+        const storedToken = localStorage.getItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
 
-        if (storedToken) {
-          setTokenState(storedToken);
-        }
+        setTokenState(storedToken || null);
 
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser) as User;
           setUserState(parsedUser);
-          return;
         }
 
-        if (storedToken) {
-          const headers: HeadersInit = {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${storedToken}`,
-          };
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+        });
 
-          const response = await fetch("/api/auth/me", {
-            method: "GET",
-            headers,
-            cache: "no-store",
-          });
-
-          if (response.ok) {
-            const restoredUser = (await response.json()) as User;
-            setUserState(restoredUser);
-            localStorage.setItem(AUTH_CONFIG.USER_STORAGE_KEY, JSON.stringify(restoredUser));
-          } else if (response.status === 401) {
-            localStorage.removeItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
-            localStorage.removeItem(AUTH_CONFIG.USER_STORAGE_KEY);
-            setTokenState(null);
-            setUserState(null);
-          }
+        if (response.ok) {
+          const restoredUser = (await response.json()) as User;
+          setUserState(restoredUser);
+          localStorage.setItem(AUTH_CONFIG.USER_STORAGE_KEY, JSON.stringify(restoredUser));
+        } else if (response.status === 401) {
+          localStorage.removeItem(AUTH_CONFIG.USER_STORAGE_KEY);
+          localStorage.removeItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
+          setTokenState(null);
+          setUserState(null);
         }
       } catch (error) {
         console.error("Failed to initialize app state:", error);
@@ -110,7 +99,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setToken = useCallback((token: string | null) => {
     setTokenState(token);
     if (typeof window === "undefined") return;
-
     if (token) {
       localStorage.setItem(AUTH_CONFIG.TOKEN_STORAGE_KEY, token);
     } else {
@@ -127,8 +115,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (typeof window === "undefined") return;
 
-    localStorage.removeItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
     localStorage.removeItem(AUTH_CONFIG.USER_STORAGE_KEY);
+    localStorage.removeItem(AUTH_CONFIG.TOKEN_STORAGE_KEY);
   }, []);
 
   /**
@@ -148,7 +136,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: AppContextType = {
     user,
-    isAuthenticated: !!token && !!user,
+    isAuthenticated: !!user,
     isLoading,
     setUser,
     logout,

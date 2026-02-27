@@ -21,7 +21,7 @@ export const AUTH_CONFIG = {
   TOKEN_STORAGE_KEY: "rhesult_token",
   USER_STORAGE_KEY: "rhesult_user",
   COOKIE_NAME: "rhesult_token",
-  COOKIE_MAX_AGE: 60 * 60 * 24 * 7, // 7 days
+  COOKIE_MAX_AGE: 60 * 60 * 24, // 24 hours — must match backend TOKEN_TTL_HOURS
   COOKIE_PATH: "/",
   REDIRECT_DELAY_MS: 500,
 } as const;

@@ -1,13 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useAuth } from "@/shared/context/AppContext";
 import type { User } from "@/shared/types/domain";
 import { loginRequest } from "../services/authApi";
-import { AUTH_CONFIG } from "@/shared/constants/app";
 
 export function LoginPageClient() {
   const router = useRouter();
@@ -36,9 +34,9 @@ export function LoginPageClient() {
         throw new Error("Resposta de login sem token. Verifique o endpoint do backend.");
       }
 
-      // Salvar em localStorage (para compatibilidade)
+      // Persistir token + dados de usuário no localStorage
       if (typeof window !== "undefined") {
-        localStorage.setItem(AUTH_CONFIG.TOKEN_STORAGE_KEY, token);
+        localStorage.setItem("rhesult_token", token);
         if (response.user) {
           localStorage.setItem("rhesult_user", JSON.stringify(response.user));
         }
@@ -138,7 +136,8 @@ export function LoginPageClient() {
             </div>
 
             <div className="flex items-center justify-between text-xs text-gray-600">
-              <Link href="/cadastro" className="text-[#E55210] font-semibold hover:underline">Criar conta</Link>
+              {/* TODO: habilitar quando a página de cadastro existir */}
+              {/* <Link href="/cadastro" className="text-[#E55210] font-semibold hover:underline">Criar conta</Link> */}
             </div>
 
             {error && <div className="text-sm text-red-600">{error}</div>}

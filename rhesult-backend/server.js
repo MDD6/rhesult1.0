@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 
 // Socket.IO authentication middleware
 io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
+  const token = socket.handshake.auth?.token || extractToken('', socket.handshake.headers?.cookie || '');
   if (!token) {
     return next(new Error('Authentication required'));
   }
@@ -196,7 +196,7 @@ app.use(cors({
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.text());
-app.use('/uploads', express.static(UPLOADS_ROOT));
+app.use('/uploads/avatars', express.static(AVATARS_DIR));
 
 
 const PORT = process.env.PORT || 4000;
@@ -210,7 +210,11 @@ const revokedTokens = new Map();
 
 const TOKEN_TTL_HOURS = Number(process.env.TOKEN_TTL_HOURS || 24);
 const TOKEN_TTL_MS = TOKEN_TTL_HOURS * 60 * 60 * 1000;
-const JWT_SECRET = process.env.JWT_SECRET || 'rhesult_secret_key_2024';
+const JWT_SECRET = String(process.env.JWT_SECRET || '').trim();
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurado. Defina a variável de ambiente JWT_SECRET antes de iniciar o backend.');
+}
 
 function storeToken(token, userData) {
   tokenStore.set(token, {
@@ -337,6 +341,27 @@ function requireRoles(roles = []) {
   };
 }
 
+app.get('/uploads/curriculos/:fileName', requireAuth, (req, res) => {
+  const rawName = String(req.params.fileName || '').trim();
+  const safeName = path.basename(rawName);
+
+  if (!rawName || rawName !== safeName || !/^[a-zA-Z0-9._-]+$/.test(safeName)) {
+    return res.status(400).json({ error: 'Nome de arquivo inválido.' });
+  }
+
+  const filePath = path.join(CURRICULA_DIR, safeName);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Arquivo não encontrado.' });
+  }
+
+  return res.sendFile(filePath, (error) => {
+    if (error && !res.headersSent) {
+      res.status(500).json({ error: 'Erro ao abrir arquivo.' });
+    }
+  });
+});
+
 const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -353,6 +378,10 @@ const parsedBcryptRounds = Number(process.env.BCRYPT_SALT_ROUNDS || 12);
 const BCRYPT_SALT_ROUNDS = Number.isInteger(parsedBcryptRounds) && parsedBcryptRounds >= 8 && parsedBcryptRounds <= 15
   ? parsedBcryptRounds
   : 12;
+
+async function hashPassword(senha) {
+  return bcrypt.hash(String(senha), BCRYPT_SALT_ROUNDS);
+}
 
 function hashPasswordLegacySha256(senha) {
   return crypto.createHash('sha256').update(senha).digest('hex');
@@ -3399,7 +3428,7 @@ app.get('/api/pareceres/:id/versoes/:versionId', requireAuth, async (req, res) =
 // ==================== PUBLIC ROUTES ====================
 
 // Submissão pública de candidatura (Landing Page)
-app.post('/public/candidatos', async (req, res) => {
+app.post('/api/public/candidatos', async (req, res) => {
   if ((req.headers['content-type'] || '').includes('multipart/form-data')) {
     try {
       await handleCurriculumUpload(req, res);
@@ -3409,8 +3438,6 @@ app.post('/public/candidatos', async (req, res) => {
     }
   }
 
-  console.log('[POST /public/candidatos] Body recebido:', JSON.stringify(req.body, null, 2));
-  
   const {
     nome,
     email,
@@ -3425,8 +3452,6 @@ app.post('/public/candidatos', async (req, res) => {
     consentimento,
     pretensao,
   } = req.body;
-
-  console.log('[POST /public/candidatos] Campos extraídos:', { nome: !!nome, email: !!email, telefone: !!telefone });
 
   if (!nome || !String(nome).trim()) {
     console.warn('[POST /public/candidatos] Validação falhou: Nome vazio');
@@ -3534,6 +3559,10 @@ app.post('/api/candidatos/parse-cv', requireAuth, curriculumUpload.single('curri
 // ==================== ERROR HANDLING ====================
 
 app.use((req, res) => {
+  const fs = require('fs');
+  const msg = `[404] ${new Date().toISOString()} ${req.method} ${req.originalUrl}\n`;
+  fs.appendFileSync('404.log', msg);
+  console.warn(msg.trim());
   res.status(404).json({ error: 'Rota não encontrada.' });
 });
 

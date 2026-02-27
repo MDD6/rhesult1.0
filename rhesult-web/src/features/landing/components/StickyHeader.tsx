@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, memo } from "react";
+import { useEffect, useRef, useState, memo } from "react";
 import Image from "next/image";
 
 interface StickyHeaderProps {

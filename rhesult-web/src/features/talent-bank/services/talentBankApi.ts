@@ -121,7 +121,10 @@ export async function fetchCandidatos(filters?: FetchCandidatosFilters): Promise
   });
 
   if (!response.ok) {
-    throw new Error("Erro ao carregar candidatos.");
+    if (response.status === 401) {
+      throw new Error("Sessão expirada. Faça login novamente. [status:401]");
+    }
+    throw new Error(`Erro ao carregar candidatos. [status:${response.status}]`);
   }
 
   const data = (await response.json()) as unknown;

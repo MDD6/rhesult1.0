@@ -16,8 +16,7 @@ function resolveAvatarUrl(value?: string) {
   if (!url) return "";
 
   if (url.startsWith("/uploads/")) {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
-    return `${backendUrl}${url}`;
+    return `/api/public${url}`;
   }
 
   return url;
@@ -74,6 +73,12 @@ export function AppHeader() {
     pathname.startsWith("/entrevistados") ||
     pathname.startsWith("/agenda") ||
     pathname.startsWith("/onboarding");
+
+  const closeMobileWithDelay = (delayMs = 2000) => {
+    window.setTimeout(() => {
+      setMobileOpen(false);
+    }, delayMs);
+  };
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent) => {
@@ -388,7 +393,7 @@ export function AppHeader() {
                     <Link
                       key={item.label}
                       href={item.href}
-                      onClick={() => setMobileOpen(false)}
+                      onClick={() => closeMobileWithDelay(2000)}
                       className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-colors ${
                         isActive(pathname, item.href)
                           ? "bg-orange-50 text-orange-700 font-bold"

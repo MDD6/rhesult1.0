@@ -1,16 +1,18 @@
 'use client';
 
 import { Vaga } from '../types';
+import { getClientApiBase, buildAuthHeaders } from '@/shared/utils/clientApi';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '/api';
+function apiBase(): string {
+  return getClientApiBase() || '/api';
+}
 
 export async function fetchVagas(): Promise<Vaga[]> {
   try {
-    const response = await fetch(`${API_BASE}/vagas`, {
+    const base = apiBase();
+    const response = await fetch(`${base}/vagas`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' })
     });
 
     if (!response.ok) {
@@ -43,11 +45,10 @@ export async function createVaga(vaga: Partial<Vaga>): Promise<Vaga | null> {
       descricao_curta: vaga.descricao_curta
     };
 
-    const response = await fetch(`${API_BASE}/vagas`, {
+    const base = apiBase();
+    const response = await fetch(`${base}/vagas`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload)
     });
 
@@ -80,11 +81,10 @@ export async function updateVaga(id: string | number, vaga: Partial<Vaga>): Prom
       descricao_curta: vaga.descricao_curta
     };
 
-    const response = await fetch(`${API_BASE}/vagas/${id}`, {
+    const base = apiBase();
+    const response = await fetch(`${base}/vagas/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload)
     });
 
@@ -97,11 +97,10 @@ export async function updateVaga(id: string | number, vaga: Partial<Vaga>): Prom
 
 export async function deleteVaga(id: string | number): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE}/vagas/${id}`, {
+    const base = apiBase();
+    const response = await fetch(`${base}/vagas/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: buildAuthHeaders({ 'Content-Type': 'application/json' })
     });
 
     return response.ok;

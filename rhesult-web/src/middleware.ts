@@ -33,13 +33,16 @@ function isApiPath(pathname: string) {
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const method = request.method;
-  const token = request.cookies.get(AUTH_CONFIG.COOKIE_NAME)?.value;
+  const cookieValue = request.cookies.get(AUTH_CONFIG.COOKIE_NAME)?.value || "";
+  const authHeader = (request.headers.get("Authorization") || "").replace("Bearer ", "").trim();
+  const token = cookieValue || authHeader || "";
 
   if (isStaticPath(pathname) || isPublicPath(pathname) || isPublicApiRequest(pathname, method)) {
     return NextResponse.next();
   }
 
   if (!token) {
+    console.warn(`[middleware] 🚫 NO TOKEN for ${method} ${pathname} | cookie="${cookieValue ? "present" : "MISSING"}" | authHeader="${authHeader ? "present" : "MISSING"}" | allCookies=${JSON.stringify(request.cookies.getAll().map(c => c.name))}`);
     if (isApiPath(pathname)) {
       return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
     }

@@ -49,16 +49,20 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${BACKEND_URL}/api/:path*`,
-      },
-      {
-        source: '/uploads/:path*',
-        destination: `${BACKEND_URL}/uploads/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      // fallback rewrites run AFTER all filesystem routes (including dynamic
+      // catch-all App Router handlers like [...path] and [id]).  This ensures
+      // that API route handlers defined in src/app/api/ take priority and only
+      // unmatched /api/* requests are forwarded to the Express backend.
+      fallback: [
+        {
+          source: '/api/:path*',
+          destination: `${BACKEND_URL}/api/:path*`,
+        },
+      ],
+    };
   },
 };
 

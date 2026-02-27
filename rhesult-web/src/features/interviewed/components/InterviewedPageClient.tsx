@@ -123,7 +123,7 @@ export function InterviewedPageClient() {
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroEtapa, setFiltroEtapa] = useState("");
   const [filtroVaga, setFiltroVaga] = useState("");
-  const [sortBy, setSortBy] = useState("recentes");
+  const [sortBy] = useState("recentes");
   const [filtrosAplicados, setFiltrosAplicados] = useState({ texto: "", etapa: "", vaga: "" });
 
   const [selected, setSelected] = useState<Candidato | null>(null);

@@ -18,8 +18,7 @@ function resolveAvatarUrl(value?: string) {
   if (!url) return '';
 
   if (url.startsWith('/uploads/')) {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:4000';
-    return `${backendUrl}${url}`;
+    return `/api/public${url}`;
   }
 
   return url;

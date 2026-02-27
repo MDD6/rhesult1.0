@@ -59,13 +59,14 @@ class VagasService {
       salario_max,
       total_candidatos,
       status_processo,
+      status,
     } = payload;
 
     if (!titulo || !tipo_contrato || !modelo_trabalho) {
       throw new HttpError(400, 'Campos obrigatórios faltando.');
     }
 
-    const normalizedStatus = this.normalizeStatus(status_processo);
+    const normalizedStatus = this.normalizeStatus(status_processo || status);
     const connection = await this.pool.getConnection();
 
     try {
@@ -77,9 +78,9 @@ class VagasService {
           titulo,
           tipo_contrato,
           modelo_trabalho,
-          senioridade,
-          cidade,
-          descricao,
+          senioridade ?? null,
+          cidade ?? null,
+          descricao ?? null,
           salario_min ?? null,
           salario_max ?? null,
           normalizedStatus,
@@ -116,9 +117,10 @@ class VagasService {
       salario_max,
       total_candidatos,
       status_processo,
+      status,
     } = payload;
 
-    const normalizedStatus = this.normalizeStatus(status_processo);
+    const normalizedStatus = this.normalizeStatus(status_processo || status);
     const connection = await this.pool.getConnection();
 
     try {
@@ -128,12 +130,12 @@ class VagasService {
              cidade = ?, descricao = ?, salario_min = ?, salario_max = ?, status = ?
          WHERE id = ?`,
         [
-          titulo,
-          tipo_contrato,
-          modelo_trabalho,
-          senioridade,
-          cidade,
-          descricao,
+          titulo ?? null,
+          tipo_contrato ?? null,
+          modelo_trabalho ?? null,
+          senioridade ?? null,
+          cidade ?? null,
+          descricao ?? null,
           salario_min ?? null,
           salario_max ?? null,
           normalizedStatus,

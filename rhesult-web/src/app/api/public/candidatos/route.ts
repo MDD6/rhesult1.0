@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       body = await req.formData();
     }
 
-    const response = await fetch(`${apiBase}/public/candidatos`, {
+    const response = await fetch(`${apiBase}/api/public/candidatos`, {
       method: "POST",
       body,
       headers: Object.keys(forwardHeaders).length > 0 ? forwardHeaders : undefined,

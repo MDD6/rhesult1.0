@@ -2,7 +2,6 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import Image from "next/image";
 import { LOGOS, SERVICE_TABS, TEAM_MEMBERS } from "../data";
 import { isNewJob, useJobsPolling } from "../hooks/useJobsPolling";
 import { useTabs } from "../hooks/useTabs";
@@ -247,9 +246,9 @@ export function LandingPageClient() {
           <div className="relative marquee-wrapper w-full select-none overflow-hidden mask-linear-fade">
             <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 z-10" />
             <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 z-10" />
-            <div className="marquee-track flex gap-16 items-center animate-scroll">
+            <div className="marquee-track flex gap-28 items-center animate-scroll">
               {[...LOGOS, ...LOGOS, ...LOGOS].map((logo, idx) => (
-                <img key={`${logo}-${idx}`} src={logo} alt="Parceiro" className="h-[110px] w-auto max-w-[200px] object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-300 transform hover:scale-105" loading="lazy" />
+                <img key={`${logo}-${idx}`} src={logo} alt="Parceiro" className="h-[260px] w-auto max-w-[420px] object-contain grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-300 transform hover:scale-105" loading="lazy" />
               ))}
             </div>
           </div>
@@ -529,7 +528,7 @@ export function LandingPageClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-16">
             <div className="relative w-full h-75 md:h-105 rounded-[20px] overflow-hidden shadow-2xl border border-white/60 group">
               <video className="w-full h-full object-cover" autoPlay loop muted playsInline controls preload="none" poster="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80">
-                <source src="https://github.com/MDD6/rhesult1.0/releases/download/v1.0/RHESULT%20I%20AFAGO.mp4" type="video/mp4" />
+                <source src="/assets/images/RHESULT%20I%20AFAGO.mp4" type="video/mp4" />
                 Seu navegador não suporta vídeo.
               </video>
               <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
