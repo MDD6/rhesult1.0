@@ -20,7 +20,11 @@ const raleway = Raleway({
 
 export const metadata = {
   title: "RHesult • Versão 2.0",
-  icons: [{ rel: "icon", url: "/Rhesult.png" }],
+  icons: [
+    { rel: "icon", url: "/favicon.svg", type: "image/svg+xml" },
+    { rel: "icon", url: "/favicon.ico", sizes: "any" },
+    { rel: "apple-touch-icon", url: "/Rhesult.png" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
