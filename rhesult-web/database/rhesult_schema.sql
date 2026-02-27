@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS vagas (
     titulo VARCHAR(255) NOT NULL,
     tipo_contrato VARCHAR(100) NOT NULL, -- Ex: CLT, PJ, Estágio
     modelo_trabalho VARCHAR(100) NOT NULL, -- Ex: Presencial, Remoto, Híbrido
-    senioridade VARCHAR(100) NOT NULL, -- Ex: Júnior, Pleno, Sênior, Especialista
-    cidade VARCHAR(255) NOT NULL,
+    senioridade VARCHAR(100) NULL, -- Ex: Júnior, Pleno, Sênior, Especialista
+    cidade VARCHAR(255) NULL,
     salario_min DECIMAL(10, 2) NULL,
     salario_max DECIMAL(10, 2) NULL,
     status ENUM('Ativa', 'Pausada', 'Fechada') DEFAULT 'Ativa',
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS candidatos (
     senioridade VARCHAR(100) NULL,
     cargo_desejado VARCHAR(255) NULL,
     vaga_id INT NULL, -- Chave estrangeira para a vaga que o candidato se inscreveu
-    etapa VARCHAR(100) DEFAULT 'Inscrição', -- Ex: Inscrição, Triagem, Entrevista RH, Entrevista Técnica, Oferta, Contratado, Rejeitado
+    etapa VARCHAR(100) DEFAULT 'Inscricao', -- Ex: Inscricao, Triagem, Entrevista RH, Entrevista Técnica, Oferta, Contratado, Rejeitado
     curriculum_url VARCHAR(512) NULL,
     curriculum_text MEDIUMTEXT NULL,
     linkedin VARCHAR(512) NULL,
@@ -126,12 +126,7 @@ CREATE TABLE IF NOT EXISTS pareceres (
 INSERT IGNORE INTO usuarios (nome, email, senha_hash, role) VALUES
 ('Admin Rhesult', 'admin@rhesult.com', 'hash_seguro_aqui', 'ADMIN');
 
-INSERT INTO usuarios (nome, email, senha_hash, role)
-VALUES ('Matheus Dresch', 'matheusddresch@hotmail.com', SHA2('134679', 256), 'RH')
-ON DUPLICATE KEY UPDATE
-  nome = VALUES(nome),
-  senha_hash = VALUES(senha_hash),
-  role = VALUES(role);
+-- NOTA: Crie usuários via painel admin ou via create-user.js. Nunca commite senhas no repositório.
 
 INSERT IGNORE INTO vagas (id, titulo, tipo_contrato, modelo_trabalho, senioridade, cidade, descricao) VALUES
 (1, 'Desenvolvedor Full Stack Pleno', 'CLT', 'Híbrido', 'Pleno', 'São Paulo - SP', 'Desenvolvimento e manutenção de aplicações web.'),

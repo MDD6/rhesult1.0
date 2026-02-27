@@ -779,6 +779,36 @@ async function ensureHiringAutomationTables(connection) {
   await addColumnIfMissing('vagas', 'area', 'VARCHAR(100) NULL');
   await addColumnIfMissing('vagas', 'responsavel', 'VARCHAR(255) NULL');
 
+  // ---- Índices de performance ----
+  const addIndexIfMissing = async (tableName, indexName, indexDef) => {
+    const [idxRows] = await connection.execute(
+      `SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+      [tableName, indexName]
+    );
+    if (Number(idxRows?.[0]?.total || 0) > 0) return;
+    await connection.execute(`CREATE INDEX ${indexName} ON ${tableName} (${indexDef})`);
+  };
+
+  await addIndexIfMissing('candidatos', 'idx_candidatos_created_at', 'created_at');
+  await addIndexIfMissing('candidatos', 'idx_candidatos_etapa', 'etapa');
+  await addIndexIfMissing('candidatos', 'idx_candidatos_vaga_id', 'vaga_id');
+  await addIndexIfMissing('entrevistas', 'idx_entrevistas_data_inicio', 'data_inicio');
+  await addIndexIfMissing('entrevistas', 'idx_entrevistas_vaga_id', 'vaga_id');
+  await addIndexIfMissing('vagas', 'idx_vagas_created_at', 'created_at');
+  await addIndexIfMissing('vagas', 'idx_vagas_status', 'status');
+
+  // UNIQUE no token de confirmação de entrevista
+  const [ukRows] = await connection.execute(
+    `SELECT COUNT(*) AS total FROM INFORMATION_SCHEMA.STATISTICS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'entrevistas' AND INDEX_NAME = 'uq_entrevistas_confirmacao_token'`
+  );
+  if (Number(ukRows?.[0]?.total || 0) === 0) {
+    try {
+      await connection.execute('CREATE UNIQUE INDEX uq_entrevistas_confirmacao_token ON entrevistas (confirmacao_token)');
+    } catch (_) { /* pode falhar se já existem duplicatas NULL — OK em MySQL */ }
+  }
+
   await connection.execute(`
     CREATE TABLE IF NOT EXISTS agenda_integracoes (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1052,11 +1082,17 @@ async function handleInterviewAction(action, req, res) {
       return res.status(401).json({ error: 'Token inválido.' });
     }
 
-    const updateFields = isConfirm
-      ? `confirmacao_status = '${confirmStatus}', status = '${entrevistaStatus}', confirmado_em = NOW()`
-      : `confirmacao_status = '${confirmStatus}', status = '${entrevistaStatus}'`;
-
-    await connection.execute(`UPDATE entrevistas SET ${updateFields} WHERE id = ?`, [id]);
+    if (isConfirm) {
+      await connection.execute(
+        `UPDATE entrevistas SET confirmacao_status = ?, status = ?, confirmado_em = NOW() WHERE id = ?`,
+        [confirmStatus, entrevistaStatus, id]
+      );
+    } else {
+      await connection.execute(
+        `UPDATE entrevistas SET confirmacao_status = ?, status = ? WHERE id = ?`,
+        [confirmStatus, entrevistaStatus, id]
+      );
+    }
 
     await queueAutomationByEtapa(connection, {
       candidatoId: rows[0].candidato_id,
@@ -1158,7 +1194,7 @@ async function queueAutomationByEtapa(connection, { candidatoId, etapa, extraVar
     `SELECT id, nome, canal, etapa, assunto, corpo, ativo
      FROM comunicacoes_templates
      WHERE ativo = 1
-       AND LOWER(TRIM(etapa)) = LOWER(TRIM(?))
+       AND etapa = ?
      ORDER BY id ASC`,
     [etapaNormalizada]
   );
@@ -1647,9 +1683,9 @@ app.get('/api/vagas', vagasController.index.bind(vagasController));
 app.get('/api/vagas/search', vagasController.search.bind(vagasController));
 app.get('/api/vagas/stats', requireAuth, vagasController.stats.bind(vagasController));
 app.get('/api/vagas/:id', vagasController.show.bind(vagasController));
-app.post('/api/vagas', requireAuth, requireRoles(['admin', 'rh', 'recruiter']), vagasController.store.bind(vagasController));
-app.put('/api/vagas/:id', requireAuth, requireRoles(['admin', 'rh', 'recruiter']), vagasController.update.bind(vagasController));
-app.delete('/api/vagas/:id', requireAuth, requireRoles(['admin', 'rh', 'recruiter']), vagasController.destroy.bind(vagasController));
+app.post('/api/vagas', requireAuth, requireRoles(['admin', 'rh', 'gestor']), vagasController.store.bind(vagasController));
+app.put('/api/vagas/:id', requireAuth, requireRoles(['admin', 'rh', 'gestor']), vagasController.update.bind(vagasController));
+app.delete('/api/vagas/:id', requireAuth, requireRoles(['admin', 'rh', 'gestor']), vagasController.destroy.bind(vagasController));
 
 // ==================== CANDIDATOS ROUTES ====================
 
