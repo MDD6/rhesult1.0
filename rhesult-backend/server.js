@@ -2188,7 +2188,7 @@ app.post('/api/comunicacoes/templates/seed-defaults', requireAuth, async (_req, 
     },
     {
       nome: 'Reprovação - retorno',
-      canal: 'email',
+      canal: 'whatsapp',
       etapa: 'Reprovado',
       assunto: 'Atualização do seu processo seletivo',
       corpo: 'Olá, {{nome}}. Seguimos com outro perfil nesta etapa, mas manteremos seu currículo em nosso banco de talentos.',

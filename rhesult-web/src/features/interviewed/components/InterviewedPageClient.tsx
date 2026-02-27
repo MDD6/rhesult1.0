@@ -376,7 +376,7 @@ export function InterviewedPageClient() {
     setTemplatesSelecao([]);
 
     try {
-      const ativos = await carregarTemplates("?canal=whatsapp&ativo=true");
+      const ativos = await carregarTemplates("?ativo=true");
       const filtrados = ativos.filter((template) => {
         const nome = normalize(template.nome);
         const assunto = normalize(template.assunto);
