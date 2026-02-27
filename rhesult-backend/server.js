@@ -3487,7 +3487,7 @@ app.post('/api/public/candidatos', async (req, res) => {
         linkedin || null,
         historico || null,
         'Landing Page',
-        pretensao || null,
+        pretensao ? parseFloat(String(pretensao).replace(/[^\d.,]/g, '').replace(',', '.')) || null : null,
         consentimento ? 1 : 0,
         consentimento ? toMySqlDateTime(new Date().toISOString()) : null,
       ]

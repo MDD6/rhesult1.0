@@ -94,7 +94,7 @@ export function TalentBankApplicationMobilePageClient() {
       senioridade: form.senioridade.trim(),
       cargo_desejado: form.cargo_desejado.trim() || undefined,
       linkedin: form.linkedin.trim() || undefined,
-      pretensao: form.pretensao.trim() || undefined,
+      pretensao: form.pretensao.replace(/[^\d]/g, "") || undefined,
       consentimento: form.consentimento,
       historico: "Cadastro via página mobile de Banco de Talentos",
     };
@@ -194,9 +194,14 @@ export function TalentBankApplicationMobilePageClient() {
 
             <input
               placeholder="Pretensão salarial (opcional)"
+              inputMode="numeric"
               className="w-full inputPremium"
               value={form.pretensao}
-              onChange={(event) => setForm((prev) => ({ ...prev, pretensao: event.target.value }))}
+              onChange={(event) => {
+                const raw = event.target.value.replace(/[^\d]/g, "");
+                const formatted = raw ? `R$ ${Number(raw).toLocaleString("pt-BR")}` : "";
+                setForm((prev) => ({ ...prev, pretensao: formatted }));
+              }}
             />
 
             <div>
