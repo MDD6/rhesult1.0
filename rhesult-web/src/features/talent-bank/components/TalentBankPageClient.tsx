@@ -268,10 +268,6 @@ export function TalentBankPageClient() {
       const [cand, vg] = await Promise.all([fetchCandidatos(), fetchVagas()]);
       setCandidatos(cand);
       setVagas(vg);
-      
-      if (vg.length === 0) {
-        setVagasError("⚠️ Sistema de vagas indisponível no momento. Você ainda pode cadastrar candidatos no banco de talentos.");
-      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Erro desconhecido";
       if (errorMsg.includes("status:401") || errorMsg.toLowerCase().includes("sessão expirada")) {
