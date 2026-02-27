@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Vaga, VagaView, DEMO_VAGAS } from '../types';
+import { Vaga, VagaView } from '../types';
 import { useVagasFilter, useVagasPagination } from '../hooks';
-import { fetchVagas, createVaga, updateVaga, deleteVaga, normalizeVaga, loadLocalVagas, saveLocalVagas, mergeVagas } from '../services/vagasApi';
+import { fetchVagas, createVaga, updateVaga, deleteVaga, normalizeVaga } from '../services/vagasApi';
 import { VagasFilters } from './VagasFilters';
 import { VagasDashboard } from './VagasDashboard';
 import { VagasLista } from './VagasLista';
@@ -37,19 +37,12 @@ export function VagasPageClient() {
     setLoadError('');
     try {
       const apiVagas = await fetchVagas();
-      const localVagas = loadLocalVagas();
-      const merged = mergeVagas(
-        apiVagas.map(normalizeVaga),
-        localVagas.map(normalizeVaga)
-      );
-      const finalVagas = merged.length > 0 ? merged : DEMO_VAGAS;
-      setVagas(finalVagas);
-      setFilteredVagas(finalVagas);
+      const normalized = apiVagas.map(normalizeVaga);
+      setVagas(normalized);
+      setFilteredVagas(normalized);
     } catch (error) {
       console.error('Error loading vagas:', error);
       setLoadError('Não foi possível carregar as vagas no momento.');
-      setVagas(DEMO_VAGAS);
-      setFilteredVagas(DEMO_VAGAS);
     } finally {
       setLoading(false);
     }
@@ -95,7 +88,6 @@ export function VagasPageClient() {
       );
       setVagas(updated);
       setFilteredVagas(updated);
-      saveLocalVagas(updated);
       setShowEditar(false);
     }
   };
@@ -110,7 +102,6 @@ export function VagasPageClient() {
     const updated = vagas.filter(v => v.id !== vaga.id);
     setVagas(updated);
     setFilteredVagas(updated);
-    saveLocalVagas(updated);
   };
 
   const handleCreateVaga = async (formData: Partial<Vaga>) => {
@@ -119,7 +110,6 @@ export function VagasPageClient() {
       const updated = [...vagas, novaVaga];
       setVagas(updated);
       setFilteredVagas(updated);
-      saveLocalVagas(updated);
       setShowCriar(false);
     }
   };

@@ -18,8 +18,11 @@ class VagasService {
     try {
       const [rows] = await connection.execute(
         `SELECT id, titulo, tipo_contrato, modelo_trabalho, senioridade,
-                cidade, descricao, salario_min, salario_max,
+                cidade, descricao, descricao_curta, area, responsavel,
+                salario_min, salario_max,
+                status,
                 status AS status_processo,
+                created_at,
                 created_at AS data_abertura,
                 0 AS total_candidatos
          FROM vagas ORDER BY created_at DESC`
@@ -55,6 +58,9 @@ class VagasService {
       senioridade,
       cidade,
       descricao,
+      descricao_curta,
+      area,
+      responsavel,
       salario_min,
       salario_max,
       total_candidatos,
@@ -72,8 +78,8 @@ class VagasService {
     try {
       const [result] = await connection.execute(
         `INSERT INTO vagas
-         (titulo, tipo_contrato, modelo_trabalho, senioridade, cidade, descricao, salario_min, salario_max, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (titulo, tipo_contrato, modelo_trabalho, senioridade, cidade, descricao, descricao_curta, area, responsavel, salario_min, salario_max, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           titulo,
           tipo_contrato,
@@ -81,6 +87,9 @@ class VagasService {
           senioridade ?? null,
           cidade ?? null,
           descricao ?? null,
+          descricao_curta ?? null,
+          area ?? null,
+          responsavel ?? null,
           salario_min ?? null,
           salario_max ?? null,
           normalizedStatus,
@@ -95,9 +104,13 @@ class VagasService {
         senioridade,
         cidade,
         descricao,
+        descricao_curta: descricao_curta ?? null,
+        area: area ?? null,
+        responsavel: responsavel ?? null,
         salario_min: salario_min ?? null,
         salario_max: salario_max ?? null,
         total_candidatos: total_candidatos || 0,
+        status: normalizedStatus,
         status_processo: normalizedStatus,
       };
     } finally {
@@ -121,13 +134,19 @@ class VagasService {
     } = payload;
 
     const normalizedStatus = this.normalizeStatus(status_processo || status);
+    const {
+      descricao_curta,
+      area,
+      responsavel,
+    } = payload;
     const connection = await this.pool.getConnection();
 
     try {
       const [result] = await connection.execute(
         `UPDATE vagas
          SET titulo = ?, tipo_contrato = ?, modelo_trabalho = ?, senioridade = ?,
-             cidade = ?, descricao = ?, salario_min = ?, salario_max = ?, status = ?
+             cidade = ?, descricao = ?, descricao_curta = ?, area = ?, responsavel = ?,
+             salario_min = ?, salario_max = ?, status = ?
          WHERE id = ?`,
         [
           titulo ?? null,
@@ -136,6 +155,9 @@ class VagasService {
           senioridade ?? null,
           cidade ?? null,
           descricao ?? null,
+          descricao_curta ?? null,
+          area ?? null,
+          responsavel ?? null,
           salario_min ?? null,
           salario_max ?? null,
           normalizedStatus,
@@ -155,9 +177,13 @@ class VagasService {
         senioridade,
         cidade,
         descricao,
+        descricao_curta: descricao_curta ?? null,
+        area: area ?? null,
+        responsavel: responsavel ?? null,
         salario_min: salario_min ?? null,
         salario_max: salario_max ?? null,
         total_candidatos: total_candidatos || 0,
+        status: normalizedStatus,
         status_processo: normalizedStatus,
       };
     } finally {
@@ -212,8 +238,11 @@ class VagasService {
     try {
       const [rows] = await connection.execute(
         `SELECT id, titulo, tipo_contrato, modelo_trabalho, senioridade,
-                cidade, descricao, salario_min, salario_max,
+                cidade, descricao, descricao_curta, area, responsavel,
+                salario_min, salario_max,
+                status,
                 status AS status_processo,
+                created_at,
                 created_at AS data_abertura,
                 0 AS total_candidatos
          FROM vagas

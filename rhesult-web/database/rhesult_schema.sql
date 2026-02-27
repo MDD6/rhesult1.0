@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS vagas (
     salario_max DECIMAL(10, 2) NULL,
     status ENUM('Ativa', 'Pausada', 'Fechada') DEFAULT 'Ativa',
     descricao TEXT NULL,
+    descricao_curta VARCHAR(500) NULL,
+    responsavel VARCHAR(255) NULL,
+    area VARCHAR(100) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

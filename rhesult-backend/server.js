@@ -774,6 +774,11 @@ async function ensureHiringAutomationTables(connection) {
   await addColumnIfMissing('entrevistas', 'provider_integracao', 'VARCHAR(40) NULL');
   await addColumnIfMissing('entrevistas', 'provider_event_id', 'VARCHAR(255) NULL');
 
+  // Vagas: adicionar colunas extras
+  await addColumnIfMissing('vagas', 'descricao_curta', 'VARCHAR(500) NULL');
+  await addColumnIfMissing('vagas', 'area', 'VARCHAR(100) NULL');
+  await addColumnIfMissing('vagas', 'responsavel', 'VARCHAR(255) NULL');
+
   await connection.execute(`
     CREATE TABLE IF NOT EXISTS agenda_integracoes (
       id INT AUTO_INCREMENT PRIMARY KEY,
