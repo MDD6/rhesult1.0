@@ -3141,6 +3141,67 @@ app.patch('/api/onboarding/documentos/:docId/assinar', requireAuth, async (req, 
   }
 });
 
+// ==================== ONBOARDING DELETE ROUTES ====================
+
+app.delete('/api/onboarding/processos/:id', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await ensureOnboardingTables(connection);
+    const [result] = await connection.execute('DELETE FROM onboarding_processos WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Processo não encontrado.' });
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao deletar processo de onboarding:', error);
+    res.status(500).json({ error: 'Erro ao deletar processo de onboarding.' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+app.delete('/api/onboarding/itens/:itemId', requireAuth, async (req, res) => {
+  const { itemId } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await ensureOnboardingTables(connection);
+    const [itemRows] = await connection.execute('SELECT id, processo_id FROM onboarding_itens WHERE id = ? LIMIT 1', [itemId]);
+    if (!itemRows.length) {
+      return res.status(404).json({ error: 'Item não encontrado.' });
+    }
+    await connection.execute('DELETE FROM onboarding_itens WHERE id = ?', [itemId]);
+    await recalculateOnboardingProgress(connection, Number(itemRows[0].processo_id));
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao deletar item de onboarding:', error);
+    res.status(500).json({ error: 'Erro ao deletar item de onboarding.' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
+app.delete('/api/onboarding/documentos/:docId', requireAuth, async (req, res) => {
+  const { docId } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await ensureOnboardingTables(connection);
+    const [result] = await connection.execute('DELETE FROM onboarding_documentos WHERE id = ?', [docId]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Documento não encontrado.' });
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao deletar documento de onboarding:', error);
+    res.status(500).json({ error: 'Erro ao deletar documento de onboarding.' });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 // ==================== PARECERES ROUTES ====================
 
 app.get('/api/pareceres', requireAuth, async (req, res) => {
