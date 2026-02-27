@@ -7,11 +7,13 @@ import {
   type Vaga,
   createCandidato,
   deleteCandidato,
+  deleteCandidatos,
   fetchCandidatos,
   fetchVagas,
   patchCandidatoEtapa,
   updateCandidato,
   parseCVFile,
+  recalcularScore,
 } from "../services/talentBankApi";
 import { AppHeader } from "@/shared/components/AppHeader";
 import { useSocket } from "@/context/SocketContext";
@@ -35,6 +37,8 @@ type ExportColumnKey = keyof Pick<
   | "origem"
   | "linkedin"
   | "curriculum_url"
+  | "pretensao"
+  | "score_total"
 >;
 
 const ETAPAS = [
@@ -67,6 +71,8 @@ const EXPORT_COLUMNS: { key: ExportColumnKey; label: string }[] = [
   { key: "origem", label: "Origem" },
   { key: "linkedin", label: "LinkedIn" },
   { key: "curriculum_url", label: "Currículo URL" },
+  { key: "pretensao", label: "Pretensão Salarial" },
+  { key: "score_total", label: "Score Total" },
 ];
 
 function createInitialCandidatoForm(): CreateCandidatoInput {
@@ -83,6 +89,7 @@ function createInitialCandidatoForm(): CreateCandidatoInput {
     historico: "",
     linkedin: "",
     curriculum_url: "",
+    pretensao: null,
   };
 }
 
@@ -206,6 +213,9 @@ export function TalentBankPageClient() {
   const [filtroSenioridade, setFiltroSenioridade] = useState("");
   const [filtroEtapa, setFiltroEtapa] = useState("");
   const [filtroVaga, setFiltroVaga] = useState("");
+  const [filtroOrigem, setFiltroOrigem] = useState("");
+  const [filtroPeriodo, setFiltroPeriodo] = useState("");
+  const [recalculando, setRecalculando] = useState(false);
 
   const [sortBy, setSortBy] = useState("recentes");
   const [porPagina, setPorPagina] = useState(9);
@@ -257,6 +267,7 @@ export function TalentBankPageClient() {
       historico: candidate.historico || "",
       linkedin: candidate.linkedin || "",
       curriculum_url: candidate.curriculum_url || "",
+      pretensao: candidate.pretensao ?? null,
     });
   };
 
@@ -289,6 +300,12 @@ export function TalentBankPageClient() {
     void load();
   }, []);
 
+  const origensDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    candidatos.forEach((c) => { if (c.origem) set.add(c.origem); });
+    return Array.from(set).sort();
+  }, [candidatos]);
+
   const filtered = useMemo(() => {
     const result = candidatos.filter((c) => {
       const blob = `${c.nome} ${c.cargo_desejado || ""} ${c.email || ""} ${c.telefone || ""}`.toLowerCase();
@@ -297,7 +314,20 @@ export function TalentBankPageClient() {
       const matchSenioridade = !filtroSenioridade || c.senioridade === filtroSenioridade;
       const matchEtapa = !filtroEtapa || normalize(c.etapa) === normalize(filtroEtapa);
       const matchVaga = !filtroVaga || String(c.vaga_id || "") === filtroVaga;
-      return matchTexto && matchCidade && matchSenioridade && matchEtapa && matchVaga;
+      const matchOrigem = !filtroOrigem || normalize(c.origem) === normalize(filtroOrigem);
+
+      let matchPeriodo = true;
+      if (filtroPeriodo && c.criado_em) {
+        const created = new Date(c.criado_em).getTime();
+        const now = Date.now();
+        if (filtroPeriodo === "7d") matchPeriodo = now - created <= 7 * 86400000;
+        else if (filtroPeriodo === "30d") matchPeriodo = now - created <= 30 * 86400000;
+        else if (filtroPeriodo === "90d") matchPeriodo = now - created <= 90 * 86400000;
+      } else if (filtroPeriodo && !c.criado_em) {
+        matchPeriodo = false;
+      }
+
+      return matchTexto && matchCidade && matchSenioridade && matchEtapa && matchVaga && matchOrigem && matchPeriodo;
     });
 
     result.sort((a, b) => {
@@ -306,6 +336,8 @@ export function TalentBankPageClient() {
       if (sortBy === "antigos") return dtA - dtB;
       if (sortBy === "nome_az") return normalize(a.nome).localeCompare(normalize(b.nome));
       if (sortBy === "nome_za") return normalize(b.nome).localeCompare(normalize(a.nome));
+      if (sortBy === "score_desc") return (b.score_total ?? 0) - (a.score_total ?? 0);
+      if (sortBy === "score_asc") return (a.score_total ?? 0) - (b.score_total ?? 0);
       return dtB - dtA;
     });
 
@@ -317,6 +349,8 @@ export function TalentBankPageClient() {
     filtroSenioridade,
     filtroTexto,
     filtroVaga,
+    filtroOrigem,
+    filtroPeriodo,
     sortBy,
   ]);
 
@@ -345,12 +379,20 @@ export function TalentBankPageClient() {
     monthAgo.setMonth(monthAgo.getMonth() - 1);
     const ultMes = filtered.filter((c) => c.criado_em && new Date(c.criado_em) >= monthAgo).length;
 
+    const twoMonthsAgo = new Date();
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+    const mesAnterior = filtered.filter((c) => c.criado_em && new Date(c.criado_em) >= twoMonthsAgo && new Date(c.criado_em) < monthAgo).length;
+    const variacao = mesAnterior > 0 ? Math.round(((ultMes - mesAnterior) / mesAnterior) * 100) : (ultMes > 0 ? 100 : 0);
+
+    const comScore = filtered.filter((c) => typeof c.score_total === 'number' && c.score_total > 0);
+    const avgScore = comScore.length > 0 ? Math.round(comScore.reduce((s, c) => s + (c.score_total ?? 0), 0) / comScore.length) : 0;
+
     const porEtapa = ETAPAS.map((etapa) => ({
       etapa,
       total: filtered.filter((c) => normalize(c.etapa) === normalize(etapa)).length,
     }));
 
-    return { total, fortaleza, plenoSenior, ultMes, porEtapa };
+    return { total, fortaleza, plenoSenior, ultMes, porEtapa, variacao, avgScore };
   }, [filtered]);
 
   const toggleSelect = (id: string | number) => {
@@ -382,6 +424,32 @@ export function TalentBankPageClient() {
       setBulkEtapa("");
     } catch {
       setError("Não foi possível aplicar etapa em lote.");
+    }
+  };
+
+  const applyBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Tem certeza que deseja excluir ${selectedIds.size} candidato(s)? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await deleteCandidatos([...selectedIds]);
+      clearSelection();
+      await load();
+    } catch {
+      setError("Não foi possível excluir os candidatos selecionados.");
+    }
+  };
+
+  const handleRecalcularScores = async () => {
+    if (!confirm("Recalcular pontuação de TODOS os candidatos? Isso pode levar alguns segundos.")) return;
+    setRecalculando(true);
+    try {
+      const result = await recalcularScore();
+      await load();
+      alert(`Scores recalculados! ${result.updated_count} candidato(s) atualizados.`);
+    } catch {
+      setError("Erro ao recalcular scores.");
+    } finally {
+      setRecalculando(false);
     }
   };
 
@@ -427,6 +495,7 @@ export function TalentBankPageClient() {
         historico: editForm.historico?.trim() || undefined,
         linkedin: editForm.linkedin?.trim() || undefined,
         curriculum_url: editForm.curriculum_url?.trim() || undefined,
+        pretensao: editForm.pretensao ?? null,
       });
       setDetalhe(null);
       await load();
@@ -459,6 +528,8 @@ export function TalentBankPageClient() {
     setFiltroSenioridade("");
     setFiltroEtapa("");
     setFiltroVaga("");
+    setFiltroOrigem("");
+    setFiltroPeriodo("");
     setSortBy("recentes");
     setPaginaAtual(1);
   };
@@ -553,7 +624,7 @@ export function TalentBankPageClient() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col page-shell">
+    <div className="min-h-screen flex flex-col page-shell">
       <AppHeader />
 
       <main className="flex-1 w-full p-4 sm:p-6 lg:p-8">
@@ -602,6 +673,14 @@ export function TalentBankPageClient() {
               </div>
 
               <div className="flex items-center gap-2 order-1 sm:order-2 self-end sm:self-auto">
+                 <button
+                  type="button"
+                  onClick={handleRecalcularScores}
+                  disabled={recalculando}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 backdrop-blur-sm text-slate-600 text-xs font-bold hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all disabled:opacity-50"
+                >
+                  {recalculando ? "⏳ Calculando..." : "⚡ Recalcular Scores"}
+                </button>
                  <button
                   type="button"
                   onClick={() => setShowExportModal(true)}
@@ -681,6 +760,33 @@ export function TalentBankPageClient() {
               </div>
             </div>
 
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end mt-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Origem</label>
+                <select 
+                  value={filtroOrigem} 
+                  onChange={(e) => setFiltroOrigem(e.target.value)} 
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 focus:bg-white text-sm font-medium transition-all outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-300 shadow-sm appearance-none cursor-pointer"
+                >
+                  <option value="">Todas</option>
+                  {origensDisponiveis.map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Período</label>
+                <select 
+                  value={filtroPeriodo} 
+                  onChange={(e) => setFiltroPeriodo(e.target.value)} 
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/50 focus:bg-white text-sm font-medium transition-all outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-300 shadow-sm appearance-none cursor-pointer"
+                >
+                  <option value="">Qualquer</option>
+                  <option value="7d">Últimos 7 dias</option>
+                  <option value="30d">Últimos 30 dias</option>
+                  <option value="90d">Últimos 90 dias</option>
+                </select>
+              </div>
+            </div>
+
             <div className="mt-6 pt-4 border-t border-slate-200/60 flex flex-wrap gap-3 items-center justify-between">
               <div className="flex items-center gap-2">
                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1">Ordenar por:</span>
@@ -696,6 +802,12 @@ export function TalentBankPageClient() {
                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${sortBy === 'nome_az' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       A-Z
+                    </button>
+                    <button 
+                       onClick={() => setSortBy('score_desc')}
+                       className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${sortBy === 'score_desc' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Score ↓
                     </button>
                  </div>
               </div>
@@ -744,8 +856,8 @@ export function TalentBankPageClient() {
                    </div>
                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total de Candidatos</p>
                    <p className="text-4xl font-black text-slate-800 tracking-tight">{stats.total}</p>
-                   <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 w-fit px-2 py-1 rounded-full border border-emerald-100">
-                      <span>+12%</span>
+                   <div className="mt-4 flex items-center gap-2 text-xs font-semibold bg-emerald-50 w-fit px-2 py-1 rounded-full border border-emerald-100">
+                      <span className={stats.variacao >= 0 ? 'text-emerald-600' : 'text-red-600'}>{stats.variacao >= 0 ? '+' : ''}{stats.variacao}%</span>
                       <span className="text-emerald-600/70 font-medium">vs. mês anterior</span>
                    </div>
                 </article>
@@ -772,9 +884,9 @@ export function TalentBankPageClient() {
                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
                       <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" className="text-white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                    </div>
-                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Fortaleza / CE</p>
-                   <p className="text-4xl font-black text-white tracking-tight">{stats.fortaleza}</p>
-                   <p className="text-xs text-slate-400 mt-2 font-medium">Candidatos locais</p>
+                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Score Médio</p>
+                   <p className="text-4xl font-black text-white tracking-tight">{stats.avgScore}<span className="text-lg text-slate-400">/100</span></p>
+                   <p className="text-xs text-slate-400 mt-2 font-medium">Pontuação média dos candidatos</p>
                 </article>
               </div>
 
@@ -819,6 +931,7 @@ export function TalentBankPageClient() {
                     {ETAPAS.map((e) => <option key={e}>{e}</option>)}
                   </select>
                   <button onClick={() => void applyBulkEtapa()} className="px-3 py-2 rounded-xl bg-(--ink) text-white text-xs font-black">Aplicar</button>
+                  <button onClick={() => void applyBulkDelete()} disabled={selectedIds.size === 0} className="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-black hover:bg-red-700 disabled:opacity-40">Excluir selecionados</button>
                 </div>
               </div>
 
@@ -831,6 +944,7 @@ export function TalentBankPageClient() {
                       <th>Cargo</th>
                       <th>Senioridade</th>
                       <th>Cidade</th>
+                      <th>Score</th>
                       <th>Etapa</th>
                       <th>Criado em</th>
                       <th className="text-right">Ações</th>
@@ -839,14 +953,14 @@ export function TalentBankPageClient() {
                   <tbody>
                     {loading && (
                       <tr>
-                        <td colSpan={8} className="py-10 text-center text-slate-500">
+                        <td colSpan={9} className="py-10 text-center text-slate-500">
                           <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[var(--brand)] border-t-transparent"></div>
                           <p className="mt-2 text-xs font-semibold">Carregando candidatos...</p>
                         </td>
                       </tr>
                     )}
                     {!loading && paginaSlice.length === 0 && (
-                      <tr><td colSpan={8} className="py-8 text-center text-slate-500">Nenhum candidato encontrado.</td></tr>
+                      <tr><td colSpan={9} className="py-8 text-center text-slate-500">Nenhum candidato encontrado.</td></tr>
                     )}
                     {!loading && paginaSlice.map((c) => (
                       <tr key={String(c.id)}>
@@ -860,6 +974,17 @@ export function TalentBankPageClient() {
                         <td>{c.cargo_desejado || "-"}</td>
                         <td>{c.senioridade || "-"}</td>
                         <td>{c.cidade || "-"}</td>
+                        <td>
+                          {c.score_total != null ? (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black ${
+                              c.score_total >= 70 ? 'bg-emerald-100 text-emerald-700' :
+                              c.score_total >= 40 ? 'bg-amber-100 text-amber-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>{c.score_total}</span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
                         <td><span className={badgeClass(c.etapa)}>{c.etapa || "-"}</span></td>
                         <td>{c.criado_em ? new Date(c.criado_em).toLocaleDateString("pt-BR") : "-"}</td>
                         <td className="text-right">
@@ -906,8 +1031,16 @@ export function TalentBankPageClient() {
                       <p className="truncate">📞 {c.telefone || "N/A"}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className={badgeClass(c.etapa)}>{c.etapa || "Inscricao"}</span>
+                      {c.senioridade && <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-bold border border-indigo-100">{c.senioridade}</span>}
+                      {c.score_total != null && (
+                        <span className={`ml-auto px-2 py-0.5 rounded-full text-[10px] font-black ${
+                          c.score_total >= 70 ? 'bg-emerald-100 text-emerald-700' :
+                          c.score_total >= 40 ? 'bg-amber-100 text-amber-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>⭐ {c.score_total}</span>
+                      )}
                       <button onClick={() => openDetalhe(c)} className="ml-auto px-3 py-2 rounded-lg bg-slate-50 text-slate-700 text-xs font-semibold hover:bg-slate-100 border border-slate-200">Ver perfil</button>
                     </div>
                   </article>
@@ -964,8 +1097,43 @@ export function TalentBankPageClient() {
                       {vagas.map((vaga) => <option key={String(vaga.id)} value={String(vaga.id)}>{vaga.titulo}</option>)}
                     </select>
                     <p><strong>Criado em:</strong> {detalhe.criado_em ? new Date(detalhe.criado_em).toLocaleString("pt-BR") : "-"}</p>
+                    <div className="mt-2">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase">Pretensão salarial (R$)</label>
+                      <input type="number" step="0.01" min="0" value={editForm.pretensao ?? ""} onChange={(e) => setEditForm((prev) => ({ ...prev, pretensao: e.target.value === '' ? null : Number(e.target.value) }))} placeholder="Ex: 5000.00" className="mt-1 w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs" />
+                    </div>
                   </div>
                 </div>
+
+                {detalhe.score_total != null && (
+                  <div className="mt-4 glass p-3">
+                    <p className="text-xs font-black text-slate-500 uppercase mb-2">Scores</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {[
+                        { label: 'Total', value: detalhe.score_total },
+                        { label: 'Técnico', value: detalhe.score_tecnico },
+                        { label: 'Comportam.', value: detalhe.score_comportamental },
+                        { label: 'Salarial', value: detalhe.score_salarial },
+                      ].map((s) => (
+                        <div key={s.label} className="text-center p-2 rounded-lg bg-white border border-slate-100">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{s.label}</p>
+                          <p className={`text-lg font-black ${
+                            (s.value ?? 0) >= 70 ? 'text-emerald-600' :
+                            (s.value ?? 0) >= 40 ? 'text-amber-600' :
+                            'text-red-600'
+                          }`}>{s.value ?? '—'}</p>
+                        </div>
+                      ))}
+                      <div className="text-center p-2 rounded-lg bg-white border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">Prioridade</p>
+                        <p className={`text-lg font-black ${
+                          detalhe.score_prioridade === 'Alta' ? 'text-emerald-600' :
+                          detalhe.score_prioridade === 'Media' ? 'text-amber-600' :
+                          'text-red-600'
+                        }`}>{detalhe.score_prioridade || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4">
                   <p className="text-sm font-black text-(--ink) mb-2">Histórico</p>
@@ -1165,6 +1333,10 @@ export function TalentBankPageClient() {
                 </select>
               </div>
               <div>
+                <label className="block text-xs font-black text-slate-600 mb-1">Pretensão salarial (R$)</label>
+                <input type="number" step="0.01" min="0" value={createForm.pretensao ?? ""} onChange={(event) => setCreateForm((prev) => ({ ...prev, pretensao: event.target.value === '' ? null : Number(event.target.value) }))} placeholder="Ex: 5000.00" className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
+              </div>
+              <div>
                 <label className="block text-xs font-black text-slate-600 mb-1">LinkedIn</label>
                 <input value={createForm.linkedin || ""} onChange={(event) => setCreateForm((prev) => ({ ...prev, linkedin: event.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm" />
               </div>
@@ -1185,6 +1357,6 @@ export function TalentBankPageClient() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

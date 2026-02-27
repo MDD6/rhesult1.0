@@ -20,6 +20,7 @@ export type Candidato = {
   score_comportamental?: number;
   score_salarial?: number;
   score_prioridade?: string; // 'Alta', 'Media', 'Baixa'
+  pretensao?: number | null;
 };
 
 export type Vaga = {
@@ -67,6 +68,7 @@ export type CreateCandidatoInput = {
   historico?: string;
   linkedin?: string;
   curriculum_url?: string;
+  pretensao?: number | string | null;
 };
 
 export type UpdateCandidatoInput = Partial<CreateCandidatoInput>;
@@ -100,6 +102,7 @@ function normalizeCandidate(input: Record<string, unknown>): Candidato {
     score_comportamental: typeof input.score_comportamental === 'number' ? input.score_comportamental : undefined,
     score_salarial: typeof input.score_salarial === 'number' ? input.score_salarial : undefined,
     score_prioridade: String(input.score_prioridade || '').trim() || undefined,
+    pretensao: typeof input.pretensao === 'number' ? input.pretensao : (input.pretensao ? Number(input.pretensao) : null),
   };
 }
 
@@ -242,4 +245,28 @@ export async function deleteCandidato(id: string | number): Promise<void> {
   if (!response.ok) {
     throw new Error("Erro ao excluir candidato.");
   }
+}
+
+export async function recalcularScore(candidatoId?: number): Promise<{ ok: boolean; updated_count: number }> {
+  const apiBase = getApiBase();
+  const url = apiBase ? `${apiBase}/api/candidatos/recalcular-score` : `/api/candidatos/recalcular-score`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...buildHeaders(),
+    },
+    body: JSON.stringify(candidatoId ? { candidato_id: candidatoId } : {}),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erro ao recalcular scores.");
+  }
+
+  return response.json();
+}
+
+export async function deleteCandidatos(ids: (string | number)[]): Promise<void> {
+  await Promise.all(ids.map((id) => deleteCandidato(id)));
 }
